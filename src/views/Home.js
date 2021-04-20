@@ -1,8 +1,15 @@
+// ** Custom Components
+import Avatar from '@components/avatar'
+
+// ** Third Party Components
+import axios from 'axios'
+
+
 // ** React Imports
 import { Fragment, useState, forwardRef } from 'react'
 
 // ** Table Data & Columns
-import { data, columns, editEvent } from './data'
+import { data } from './data'
 
 // ** Add New Modal Component
 import AddNewModal from './AddNewModal'
@@ -11,7 +18,7 @@ import AddNewModal from './AddNewModal'
 // ** Third Party Components
 import ReactPaginate from 'react-paginate'
 import DataTable from 'react-data-table-component'
-import { ChevronDown, Share, Printer, FileText, File, Grid, Copy, Plus } from 'react-feather'
+import { ChevronDown, Share, Printer, File, Grid, Copy, Plus, MoreVertical, Edit, FileText, Archive, Trash  } from 'react-feather'
 import {
   Card,
   CardHeader,
@@ -24,7 +31,8 @@ import {
   Input,
   Label,
   Row,
-  Col
+  Col,
+  Badge, UncontrolledDropdown
 } from 'reactstrap'
 
 // ** Bootstrap Checkbox Component
@@ -41,10 +49,98 @@ const DataTableWithButtons = () => {
   const [currentPage, setCurrentPage] = useState(0)
   const [searchValue, setSearchValue] = useState('')
   const [filteredData, setFilteredData] = useState([])
+  const [currentId, setCurrentId] = useState('')
+
+   //deleteCountry
+  const deleteCountry = (val) => {
+    //here we passing id to delete this specific record
+    console.log(val)
+  }
+    //edit action
+   const AddeditEvent = (val) => {
+     //here we hande event which comming from addNewModel.js (Form for add and edit)
+      setCurrentId("")
+      console.log(val)
+  }
+
+  //columns
+  const columns = [
+        {
+          name: 'Name',
+          selector: 'Name',
+          sortable: true,
+          minWidth: '250px',
+          cell: row => (
+            <div className='d-flex align-items-center'>
+              <div className='user-info text-truncate ml-1'>
+                <span className='d-block font-weight-bold text-truncate'>{row.Name}</span>
+              </div>
+            </div>
+          )
+        },
+        {
+          name: 'initial',
+          selector: 'Initial',
+          sortable: true,
+          minWidth: '250px'
+        },
+        {
+          name: 'Code',
+          selector: 'code',
+          sortable: true,
+          minWidth: '150px'
+        },
+
+        {
+          name: 'Currency',
+          selector: 'currencies',
+          sortable: true,
+          minWidth: '150px',
+          cell: row => {
+            const currency = row.currencies.[0].symbol
+            return (
+                <div className='d-flex align-items-center'>
+                  <div className='user-info text-truncate ml-1'>
+                    <span className='d-block font-weight-bold text-truncate'>{currency}</span>
+                  </div>
+                </div>
+            )
+          }
+        },
+        {
+          name: 'Actions',
+          allowOverflow: true,
+          cell: row => {
+            return (
+              <div className='d-flex'>
+                <UncontrolledDropdown>
+                  <DropdownToggle className='pr-1' tag='span'>
+                    <MoreVertical size={15} />
+                  </DropdownToggle>
+                  <DropdownMenu right>
+                    <DropdownItem tag='a' href='/' className='w-100' onClick={e => {
+                                                                                    e.preventDefault()
+                                                                                    deleteCountry(row.id)
+                                                                                  } }>
+                      <Trash size={15} />
+                      <span  className='align-middle ml-50'>Delete</span>
+                    </DropdownItem>
+                  </DropdownMenu>
+                </UncontrolledDropdown>
+
+                <Edit size={15} onClick={ () => { 
+                                    setCurrentId(row.id)
+                                    setModal(true)
+                                     } }/>
+              </div>
+            )
+          }
+        }
+    ]
+
 
   // ** Function to handle Modal toggle
   const handleModal = () => {
-    
     setModal(!modal)
   }
 
@@ -65,14 +161,14 @@ const DataTableWithButtons = () => {
     if (value.length) {
       updatedData = data.filter(item => {
         const startsWith =
-          item.name.toLowerCase().startsWith(value.toLowerCase()) ||
-          item.alpha2Code.toLowerCase().startsWith(value.toLowerCase()) ||
-          item.numericCode.toLowerCase().startsWith(value.toLowerCase())
+          item.Name.toLowerCase().startsWith(value.toLowerCase()) ||
+          item.Initial.toLowerCase().startsWith(value.toLowerCase()) ||
+          item.code.toLowerCase().startsWith(value.toLowerCase())
 
         const includes =
-          item.name.toLowerCase().includes(value.toLowerCase()) ||
-          item.alpha2Code.toLowerCase().includes(value.toLowerCase()) ||
-          item.numericCode.toLowerCase().includes(value.toLowerCase())
+          item.Name.toLowerCase().includes(value.toLowerCase()) ||
+          item.Initial.toLowerCase().includes(value.toLowerCase()) ||
+          item.code.toLowerCase().includes(value.toLowerCase())
         if (startsWith) {
           return startsWith
         } else if (!startsWith && includes) {
@@ -115,50 +211,6 @@ const DataTableWithButtons = () => {
     />
   )
 
-
-  // ** Converts table to CSV
-  function convertArrayOfObjectsToCSV(array) {
-    let result
-
-    const columnDelimiter = ','
-    const lineDelimiter = '\n'
-    const keys = Object.keys(data[0])
-
-    result = ''
-    result += keys.join(columnDelimiter)
-    result += lineDelimiter
-
-    array.forEach(item => {
-      let ctr = 0
-      keys.forEach(key => {
-        if (ctr > 0) result += columnDelimiter
-
-        result += item[key]
-
-        ctr++
-      })
-      result += lineDelimiter
-    })
-
-    return result
-  }
-
-  // ** Downloads CSV
-  function downloadCSV(array) {
-    const link = document.createElement('a')
-    let csv = convertArrayOfObjectsToCSV(array)
-    if (csv === null) return
-
-    const filename = 'export.csv'
-
-    if (!csv.match(/^data:text\/csv/i)) {
-      csv = `data:text/csv;charset=utf-8,${csv}`
-    }
-
-    link.setAttribute('href', encodeURI(csv))
-    link.setAttribute('download', filename)
-    link.click()
-  }
 
   return (
     <Fragment>
@@ -205,7 +257,7 @@ const DataTableWithButtons = () => {
         />
         
       </Card>
-      <AddNewModal open={modal} handleModal={handleModal} editAction={editEvent} />
+      <AddNewModal open={modal} handleModal={handleModal} editAction={AddeditEvent} currentId={currentId} data={data} />
     </Fragment>
   )
 }
